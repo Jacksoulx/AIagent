@@ -20,6 +20,7 @@ In the project root directory, run:
 
 ```bash
 python main.py
+python main.py research
 ```
 
 Then you can chat with the model directly in the terminal. Type `exit` or `quit` to end the session.
