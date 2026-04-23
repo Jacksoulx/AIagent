@@ -19,9 +19,11 @@ from aiagent.detectors.training import (
     get_training_recommendations,
     score_with_statistical_baseline,
 )
+from aiagent.env_utils import get_openai_api_key
 
 
 def run_cli_research_chat() -> None:
+    get_openai_api_key()
     llm = ChatOpenAI(model="gpt-4o-mini")
 
     base_prompt = ChatPromptTemplate.from_messages(

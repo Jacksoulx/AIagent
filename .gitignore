@@ -1,0 +1,13 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+agent/
+.venv/
+venv/
+env/
+
+# Editor settings
+.vscode/

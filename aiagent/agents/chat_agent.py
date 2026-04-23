@@ -1,14 +1,10 @@
 from openai import OpenAI
-import os
+
+from aiagent.env_utils import get_openai_api_key
 
 
 def create_client() -> OpenAI:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "Environment variable OPENAI_API_KEY not found. "
-            "Please set it in your system or current shell session."
-        )
+    api_key = get_openai_api_key()
     return OpenAI(api_key=api_key)
 
 
