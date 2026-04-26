@@ -1,10 +1,9 @@
 from typing import Dict, Any
 
-from langchain_core.tools import tool
+from aiagent.invokable import InvokableTool
 
 
-@tool
-def simple_consensus_anomaly_detector(metrics: Dict[str, float]) -> Dict[str, Any]:
+def _simple_consensus_anomaly_detector(metrics: Dict[str, float]) -> Dict[str, Any]:
     """Perform a simple rule-based anomaly assessment on consensus metrics.
 
     Expects the same keys as returned by get_mock_chain_metrics and returns
@@ -51,3 +50,6 @@ def simple_consensus_anomaly_detector(metrics: Dict[str, float]) -> Dict[str, An
             else "No strong anomaly indicators based on simple rules."
         ),
     }
+
+
+simple_consensus_anomaly_detector = InvokableTool(_simple_consensus_anomaly_detector)

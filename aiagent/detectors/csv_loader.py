@@ -1,15 +1,12 @@
-from __future__ import annotations
-
 import csv
-from typing import List
+from typing import Dict, List
 
-from aiagent.detectors.schemas import ConsensusMetrics, LabeledMetricsSample
-from aiagent.detectors.training import FEATURE_NAMES
+from aiagent.detectors.schemas import FEATURE_NAMES, ConsensusMetrics, LabeledMetricsSample
 
 REQUIRED_COLUMNS = FEATURE_NAMES
 
 
-def _row_to_metrics(row: dict[str, str]) -> ConsensusMetrics:
+def _row_to_metrics(row: Dict[str, str]) -> ConsensusMetrics:
     return {
         "block_time_sec_avg": float(row["block_time_sec_avg"]),
         "block_time_sec_std": float(row["block_time_sec_std"]),

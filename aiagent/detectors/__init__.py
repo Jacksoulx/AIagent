@@ -1,6 +1,7 @@
 """Anomaly detection and security monitoring models."""
 
 from aiagent.detectors.schemas import (
+    FEATURE_NAMES,
     AnomalyDetectionResult,
     ConsensusMetrics,
     LabeledMetricsSample,
@@ -27,6 +28,7 @@ from aiagent.detectors.training import (
 )
 
 __all__ = [
+    "FEATURE_NAMES",
     "AnomalyDetectionResult",
     "ConsensusMetrics",
     "LabeledMetricsSample",

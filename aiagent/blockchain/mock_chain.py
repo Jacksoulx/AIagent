@@ -1,10 +1,9 @@
 from typing import Dict
 
-from langchain_core.tools import tool
+from aiagent.invokable import InvokableTool
 
 
-@tool
-def get_mock_chain_metrics(chain: str = "mockchain") -> Dict[str, float]:
+def _get_mock_chain_metrics(chain: str = "mockchain") -> Dict[str, float]:
     """Return mock consensus-level metrics for a blockchain.
 
     This is a placeholder for real node-derived metrics, useful for testing
@@ -22,3 +21,6 @@ def get_mock_chain_metrics(chain: str = "mockchain") -> Dict[str, float]:
         "hashrate_concentration_top3": 0.75,
         "miner_entropy": 0.72,
     }
+
+
+get_mock_chain_metrics = InvokableTool(_get_mock_chain_metrics)

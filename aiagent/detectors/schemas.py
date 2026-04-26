@@ -1,23 +1,18 @@
-from typing import List, TypedDict
+from typing import Any, Dict, List, Tuple
+
+FEATURE_NAMES: Tuple[str, ...] = (
+    "block_time_sec_avg",
+    "block_time_sec_std",
+    "fork_rate",
+    "orphan_rate",
+    "reorg_depth_max",
+    "hashrate_concentration_top1",
+    "hashrate_concentration_top3",
+    "miner_entropy",
+)
 
 
-class ConsensusMetrics(TypedDict):
-    block_time_sec_avg: float
-    block_time_sec_std: float
-    fork_rate: float
-    orphan_rate: float
-    reorg_depth_max: float
-    hashrate_concentration_top1: float
-    hashrate_concentration_top3: float
-    miner_entropy: float
-
-
-class AnomalyDetectionResult(TypedDict):
-    anomaly_score: float
-    flags: List[str]
-    summary: str
-
-
-class LabeledMetricsSample(TypedDict):
-    metrics: ConsensusMetrics
-    label: str
+ConsensusMetrics = Dict[str, float]
+AnomalyDetectionResult = Dict[str, Any]
+LabeledMetricsSample = Dict[str, Any]
+MetricsArtifact = Dict[str, Any]

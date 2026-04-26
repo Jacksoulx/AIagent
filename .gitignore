@@ -1,13 +1,26 @@
 # Python caches
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
+.pytest_cache/
+pytest-of-*/
 
 # Virtual environments
 agent/
 .venv/
 venv/
 env/
+
+# Local environment and runtime outputs
+.env
+outputs/
+
+# pip temporary directories
+pip-build-tracker-*
+pip-ephem-wheel-cache-*
+pip-install-*
+pip-unpack-*
 
 # Editor settings
 .vscode/

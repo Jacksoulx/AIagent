@@ -1,20 +1,12 @@
-from __future__ import annotations
-
 import random
 from typing import Dict, List
 
-from aiagent.detectors.schemas import AnomalyDetectionResult, ConsensusMetrics, LabeledMetricsSample
-
-FEATURE_NAMES = [
-    "block_time_sec_avg",
-    "block_time_sec_std",
-    "fork_rate",
-    "orphan_rate",
-    "reorg_depth_max",
-    "hashrate_concentration_top1",
-    "hashrate_concentration_top3",
-    "miner_entropy",
-]
+from aiagent.detectors.schemas import (
+    FEATURE_NAMES,
+    AnomalyDetectionResult,
+    ConsensusMetrics,
+    LabeledMetricsSample,
+)
 
 
 def _generate_normal_sample() -> LabeledMetricsSample:

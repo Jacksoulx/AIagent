@@ -12,7 +12,14 @@ pip install -r requirements.txt
 
 Make sure the following environment variable is set:
 
+- `ETH_RPC_URL`
 - `OPENAI_API_KEY`
+
+Notes:
+
+- `OPENAI_API_KEY` is required only for LLM-backed analysis and explanation commands.
+- `analyze eth chain dryrun` and `analyze eth chain --no-llm` do not require `OPENAI_API_KEY`.
+- `ETH_RPC_URL` is required for real-chain Ethereum telemetry commands.
 
 ## Run the command-line chat
 
@@ -27,7 +34,9 @@ Then you can chat with the model directly in the terminal. Type `exit` or `quit`
 
 ## Research agent demo commands
 
-When running `python main.py research`, you can use the following demo commands:
+When running `python main.py research`, you can use the following commands.
+
+### Existing mock and CSV demo commands
 
 - `analyze mock chain`
   - Fetches mock consensus metrics from `aiagent.blockchain.mock_chain`
@@ -51,6 +60,101 @@ When running `python main.py research`, you can use the following demo commands:
   - Runs the same workflow on a custom CSV file path
   - Example:
     - `analyze csv detector data/mock_metrics.csv`
+
+### New real-chain Ethereum commands
+
+- `analyze eth chain`
+  - Fetches the latest 100 Ethereum canonical blocks from `ETH_RPC_URL`
+  - Builds detector-compatible metrics from the recent block window
+  - Runs the rule-based detector
+  - Saves raw blocks, metrics, detector output, and an LLM report under `outputs/`
+
+- `analyze eth chain <n_blocks>`
+  - Same as above, but uses a custom block window size
+  - Example:
+    - `analyze eth chain 300`
+
+- `analyze eth chain dryrun`
+  - Fetches recent Ethereum blocks from `ETH_RPC_URL`
+  - Builds the same real-chain metrics and runs the same detector
+  - Saves raw blocks, metrics, detector output, and a deterministic local Markdown report
+  - Does not call the LLM and does not require `OPENAI_API_KEY`
+
+- `analyze eth chain --no-llm <n_blocks>`
+  - Same dry-run behavior with an explicit flag
+  - Example:
+    - `analyze eth chain --no-llm 100`
+
+- `analyze eth detector`
+  - Fetches recent Ethereum blocks
+  - Builds the current metric window
+  - Loads a baseline CSV if available
+  - Trains an `IsolationForest` model and scores the current Ethereum window
+  - Warns clearly if it falls back to `data/mock_metrics.csv`
+  - Saves artifacts under `outputs/`
+
+- `collect eth metrics <n_blocks> <output_csv_path>`
+  - Fetches recent Ethereum blocks
+  - Builds one or more rolling-window metric samples
+  - Saves detector-compatible CSV rows plus metadata columns
+  - Example:
+    - `collect eth metrics 500 data/eth_metrics_latest.csv`
+
+- `analyze real chain`
+  - Alias for `analyze eth chain`
+
+## Real-chain telemetry semantics
+
+The real-chain pipeline keeps the detector feature schema stable:
+
+- `block_time_sec_avg`
+- `block_time_sec_std`
+- `fork_rate`
+- `orphan_rate`
+- `reorg_depth_max`
+- `hashrate_concentration_top1`
+- `hashrate_concentration_top3`
+- `miner_entropy`
+
+For Ethereum canonical JSON-RPC telemetry, these fields do not all mean the same thing as they would on a PoW chain:
+
+- Directly observed:
+  - `block_time_sec_avg`
+  - `block_time_sec_std`
+
+- Proxy metrics:
+  - `hashrate_concentration_top1`
+  - `hashrate_concentration_top3`
+  - `miner_entropy`
+  - These are computed from fee recipient / proposer address frequency, not true PoW hashrate concentration.
+
+- Placeholder metrics:
+  - `fork_rate`
+  - `orphan_rate`
+  - `reorg_depth_max`
+  - Canonical block queries do not expose these reliably, so the code stores explicit metadata that they are not observable from a simple canonical RPC window.
+
+The LLM prompts are instructed to distinguish observed, proxy, and unavailable metrics and to recommend the next telemetry needed before making stronger security claims.
+
+## Artifacts
+
+Real-chain analysis runs create `outputs/` artifacts such as:
+
+- `outputs/eth_blocks_YYYYMMDD_HHMMSS.json`
+- `outputs/eth_metrics_YYYYMMDD_HHMMSS.json`
+- `outputs/eth_detection_YYYYMMDD_HHMMSS.json`
+- `outputs/eth_report_YYYYMMDD_HHMMSS.md`
+- `outputs/latest_eth_run.json`
+
+`outputs/latest_eth_run.json` is an index for the most recent Ethereum analysis run and includes:
+
+- chain
+- requested block count
+- start and end block
+- timestamp
+- detector label
+- anomaly score
+- artifact paths
 
 ## Detector development direction
 
@@ -79,8 +183,9 @@ The project now includes a minimal detector research scaffold:
 
 Recommended next step:
 
-- Replace mock metrics with real blockchain telemetry
-- Add proper dataset storage and versioning
+- Collect longer real-chain baselines
+- Add chain-specific detector training and validation
+- Add richer telemetry such as beacon-chain, p2p, mempool, and reorg tracking
 - Train unsupervised and temporal models on multi-window features
 
 ## CSV data format
@@ -112,3 +217,74 @@ label
 
 If `label` is present, the current implementation will prefer samples labeled `normal`
 when fitting the Isolation Forest training set.
+
+Real-chain collection also adds optional metadata columns such as:
+
+- `chain`
+- `start_block`
+- `end_block`
+- `start_timestamp`
+- `end_timestamp`
+- `source`
+- `metric_notes`
+
+These extra columns are ignored by the current CSV loader, so detector compatibility is preserved.
+
+## Demo workflow
+
+1. Set environment variables:
+
+```bash
+set ETH_RPC_URL=https://your-ethereum-rpc-endpoint
+set OPENAI_API_KEY=your-openai-api-key
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Start research mode:
+
+```bash
+python main.py research
+```
+
+4. Run a no-LLM real-chain dry run:
+
+```text
+analyze eth chain dryrun 100
+```
+
+5. Collect a reusable Ethereum baseline CSV:
+
+```text
+collect eth metrics 500 data/eth_metrics_latest.csv
+```
+
+6. Run rule-based real-chain analysis with the LLM enabled:
+
+```text
+analyze eth chain 100
+```
+
+7. Run Isolation Forest scoring on real-chain telemetry:
+
+```text
+analyze eth detector
+```
+
+## Metric interpretation caveats
+
+- Ethereum proposer concentration is only a proxy for hashrate concentration.
+- `fork_rate`, `orphan_rate`, and `reorg_depth_max` are placeholders when the data source is canonical Ethereum JSON-RPC alone.
+- Stronger security conclusions require richer telemetry such as beacon-chain data, p2p propagation measurements, mempool data, relay / builder telemetry, explicit reorg tracking, or node logs.
+
+## Run tests
+
+From the project root:
+
+```bash
+python -m pytest
+```

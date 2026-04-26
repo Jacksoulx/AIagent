@@ -1,11 +1,13 @@
-from __future__ import annotations
-
 from typing import Any, Dict, List
 
 from sklearn.ensemble import IsolationForest
 
-from aiagent.detectors.schemas import AnomalyDetectionResult, ConsensusMetrics, LabeledMetricsSample
-from aiagent.detectors.training import FEATURE_NAMES
+from aiagent.detectors.schemas import (
+    FEATURE_NAMES,
+    AnomalyDetectionResult,
+    ConsensusMetrics,
+    LabeledMetricsSample,
+)
 
 
 def metrics_to_feature_vector(metrics: ConsensusMetrics) -> List[float]:
