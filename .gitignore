@@ -15,6 +15,8 @@ env/
 # Local environment and runtime outputs
 .env
 outputs/
+data/eth_metrics_latest.csv
+*.log
 
 # pip temporary directories
 pip-build-tracker-*

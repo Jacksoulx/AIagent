@@ -151,6 +151,8 @@ def test_dry_run_report_saves_artifacts_and_skips_openai_key(
     assert "## Proxy Metrics" in content
     assert "## Unavailable Placeholder Metrics" in content
     assert "Requested 5 blocks, but only 3 canonical blocks were returned." in content
+    assert "proposer / fee-recipient concentration proxy is high" in content
+    assert "hashrate highly concentrated in top miner" not in content
 
     latest_index_path = outputs_dir / "latest_eth_run.json"
     assert latest_index_path.exists()
@@ -172,6 +174,34 @@ def test_dry_run_report_saves_artifacts_and_skips_openai_key(
     report_path = latest_index["artifacts"]["report"]
     report_text = (tmp_path / report_path).read_text(encoding="utf-8")
     assert "## Recommended Next Telemetry Sources" in report_text
+
+
+def test_eth_llm_prompt_uses_post_merge_wording() -> None:
+    blocks = [
+        _make_block(700, 1_000, "0xaaa"),
+        _make_block(701, 1_012, "0xaaa"),
+        _make_block(702, 1_024, "0xbbb"),
+    ]
+    metrics_report = build_ethereum_metrics_report(blocks)
+    detector_result = {
+        "detector": "simple_rule_based",
+        "detector_label": "anomalous",
+        "anomaly_score": 0.2,
+        "result": {
+            "anomaly_score": 0.2,
+            "flags": ["proposer / fee-recipient concentration proxy is high"],
+            "summary": "proposer / fee-recipient concentration proxy is high",
+        },
+    }
+
+    prompt = research_agent._build_eth_chain_analysis_prompt(
+        metrics_report,
+        detector_result,
+    )
+
+    assert "proposer / fee-recipient concentration proxies" in prompt
+    assert "entropy over proposer / fee-recipient addresses" in prompt
+    assert "Do not call fee recipients miners" in prompt
 
 
 def test_collect_eth_metrics_generates_rolling_windows_with_metadata(

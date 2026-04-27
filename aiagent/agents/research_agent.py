@@ -47,9 +47,18 @@ MIN_ETH_BLOCKS_FOR_METRICS = 2
 OUTPUTS_DIR = "outputs"
 
 ETH_TELEMETRY_WARNINGS = [
-    "hashrate_concentration_* and miner_entropy are proposer concentration proxies on Ethereum post-Merge.",
+    "hashrate_concentration_top1/top3 are proposer / fee-recipient concentration proxies on Ethereum post-Merge, not PoW hashrate.",
+    "miner_entropy is entropy over proposer / fee-recipient addresses on Ethereum post-Merge.",
     "fork_rate, orphan_rate, and reorg_depth_max are placeholders for canonical RPC-only telemetry.",
 ]
+ETH_LLM_INTERPRETATION_INSTRUCTIONS = (
+    "Ethereum interpretation instructions:\n"
+    "- Do not interpret hashrate_concentration_top1/top3 as PoW hashrate.\n"
+    "- Do not call fee recipients miners in Ethereum post-Merge analysis.\n"
+    "- Describe hashrate_concentration_top1/top3 as proposer / fee-recipient concentration proxies.\n"
+    "- Describe miner_entropy as entropy over proposer / fee-recipient addresses.\n"
+    "- Explain that fork_rate, orphan_rate, and reorg_depth_max are placeholders under canonical JSON-RPC.\n"
+)
 NEXT_ETH_TELEMETRY_SOURCES = [
     "Beacon-chain proposer and validator telemetry",
     "P2P block propagation and peer-level latency measurements",
@@ -222,6 +231,7 @@ def _build_eth_chain_analysis_prompt(
         "1. Fetch a recent canonical block window using Ethereum JSON-RPC.\n"
         "2. Derive detector-compatible consensus-like metrics from the block window.\n"
         "3. Run a simple rule-based anomaly detector on those metrics.\n\n"
+        f"{ETH_LLM_INTERPRETATION_INSTRUCTIONS}\n"
         f"Metrics report (JSON):\n{metrics_json}\n\n"
         f"Detector result (JSON):\n{detector_json}\n\n"
         "Please do the following:\n"
@@ -255,6 +265,7 @@ def _build_eth_detector_analysis_prompt(
         f"2. Load training samples from {training_dataset_path}.\n"
         "3. Fit an Isolation Forest model and score the current Ethereum metric window.\n"
         "4. Also run the simple rule-based detector for comparison.\n\n"
+        f"{ETH_LLM_INTERPRETATION_INSTRUCTIONS}\n"
         f"Metrics report (JSON):\n{metrics_json}\n\n"
         f"Rule-based detector result (JSON):\n{rule_detection_json}\n\n"
         f"Isolation Forest result (JSON):\n{ml_detection_json}\n\n"
@@ -333,7 +344,7 @@ def _build_dry_run_markdown_report(
 ) -> str:
     detector_payload = detector_result["result"]
     flag_lines = [
-        f"- {flag}" for flag in detector_payload.get("flags", [])
+        f"- {_format_eth_detector_flag(flag)}" for flag in detector_payload.get("flags", [])
     ] or ["- None."]
     warning_lines = [f"- {warning}" for warning in warnings] or ["- None."]
     note_lines = [f"- {note}" for note in metrics_report.notes] or ["- None."]
@@ -382,6 +393,26 @@ def _build_dry_run_markdown_report(
         "",
     ]
     return "\n".join(lines)
+
+
+def _format_eth_detector_flag(flag: str) -> str:
+    if flag == "hashrate highly concentrated in top miner":
+        return "proposer / fee-recipient concentration proxy is high"
+    return flag
+
+
+def _format_eth_detector_result(detection: Dict[str, Any]) -> Dict[str, Any]:
+    formatted = dict(detection)
+    formatted["flags"] = [
+        _format_eth_detector_flag(flag) for flag in detection.get("flags", [])
+    ]
+    summary = formatted.get("summary")
+    if isinstance(summary, str):
+        formatted["summary"] = summary.replace(
+            "hashrate highly concentrated in top miner",
+            "proposer / fee-recipient concentration proxy is high",
+        )
+    return formatted
 
 
 def _choose_eth_training_dataset(csv_path: Optional[str] = None) -> Tuple[str, Optional[str]]:
@@ -491,7 +522,7 @@ def _build_rule_based_eth_detector_result(
         "detector": "simple_rule_based",
         "detector_label": label,
         "anomaly_score": score,
-        "result": detection,
+        "result": _format_eth_detector_result(detection),
         "telemetry_warnings": list(ETH_TELEMETRY_WARNINGS),
         "fetch_warnings": list(warnings),
     }
@@ -541,7 +572,9 @@ def _run_analyze_eth_detector_command(
 ) -> str:
     blocks, warnings = _fetch_recent_eth_window(n_blocks)
     metrics_report = build_ethereum_metrics_report(blocks)
-    rule_detection = simple_consensus_anomaly_detector.invoke({"metrics": metrics_report.metrics})
+    rule_detection = _format_eth_detector_result(
+        simple_consensus_anomaly_detector.invoke({"metrics": metrics_report.metrics})
+    )
 
     training_dataset_path, dataset_warning = _choose_eth_training_dataset(csv_path)
     training_samples = load_metrics_samples_from_csv(training_dataset_path)

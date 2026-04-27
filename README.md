@@ -1,111 +1,138 @@
 # AIagent
 
-Command-line AI agent project skeleton for research on blockchain security, AI agents, and anomaly detection.
+AIagent is a command-line AI agent prototype for blockchain consensus-security monitoring, anomaly detection, and LLM-assisted interpretation. It combines terminal interaction, detector experiments, and a real Ethereum JSON-RPC telemetry loop so the project can be cloned, tested, and demoed as a capstone research prototype.
 
-## Install dependencies
+## Features
 
-In the project root directory (`e:\\capstone\\AIagent`), run:
+- Terminal chat mode
+- Research agent mode
+- Mock chain analysis
+- Mock detector training
+- CSV detector workflow
+- Ethereum real-chain JSON-RPC telemetry
+- Dry-run mode without LLM output
+- Isolation Forest detector
+- Artifact saving under `outputs/`
+- Rolling-window CSV collection
 
-```bash
+## Project Structure
+
+- `aiagent/agents`
+  - CLI chat and research workflows
+- `aiagent/blockchain`
+  - Mock-chain telemetry, Ethereum JSON-RPC client, metrics builders, and schemas
+- `aiagent/detectors`
+  - Rule-based detection, CSV loading, Isolation Forest, evaluation, and training helpers
+- `data/`
+  - Sample detector data such as `data/mock_metrics.csv`
+- `tests/`
+  - Regression and Ethereum pipeline tests
+- `outputs/`
+  - Generated at runtime for Ethereum analysis artifacts
+
+## Installation
+
+From the project root:
+
+```powershell
+python -m venv agent
+agent\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Make sure the following environment variable is set:
+Direct command style with the local virtual environment:
 
-- `ETH_RPC_URL`
+```powershell
+agent\Scripts\python.exe -m pytest
+```
+
+## Environment Variables
+
+The project uses:
+
 - `OPENAI_API_KEY`
+- `ETH_RPC_URL`
+
+`ETH_RPC_URL` should be a full Ethereum JSON-RPC endpoint, for example:
+
+```text
+https://eth-mainnet.g.alchemy.com/v2/<YOUR_ALCHEMY_KEY>
+```
 
 Notes:
 
-- `OPENAI_API_KEY` is required only for LLM-backed analysis and explanation commands.
-- `analyze eth chain dryrun` and `analyze eth chain --no-llm` do not require `OPENAI_API_KEY`.
-- `ETH_RPC_URL` is required for real-chain Ethereum telemetry commands.
+- Do not commit real keys.
+- For dry-run mode, `OPENAI_API_KEY` is not required, but `ETH_RPC_URL` is required.
+- For LLM interpretation, `OPENAI_API_KEY` is required.
 
-## Run the command-line chat
+## Usage
 
-In the project root directory, run:
+Start the default CLI:
 
-```bash
+```powershell
 python main.py
+```
+
+Start research mode:
+
+```powershell
 python main.py research
 ```
 
-Then you can chat with the model directly in the terminal. Type `exit` or `quit` to end the session.
-
-## Research agent demo commands
-
-When running `python main.py research`, you can use the following commands.
-
-### Existing mock and CSV demo commands
+Research CLI commands:
 
 - `analyze mock chain`
-  - Fetches mock consensus metrics from `aiagent.blockchain.mock_chain`
-  - Runs the rule-based detector in `aiagent.detectors.simple_anomaly`
-  - Asks the LLM to explain the security meaning of the results
-
 - `train mock detector`
-  - Generates labeled mock training samples
-  - Fits a simple statistical baseline using normal samples
-  - Scores the current mock chain metrics against that baseline
-  - Asks the LLM to explain the detector behavior and training implications
-
 - `analyze csv detector`
-  - Loads labeled samples from `data/mock_metrics.csv`
-  - Trains an `IsolationForest` detector on the CSV data
-  - Scores both the CSV samples and the current mock chain metrics
-  - Computes basic evaluation statistics over the CSV predictions
-  - Asks the LLM to explain what the detector likely learned and where the dataset is limited
-
-- `analyze csv detector <path-to-csv>`
-  - Runs the same workflow on a custom CSV file path
-  - Example:
-    - `analyze csv detector data/mock_metrics.csv`
-
-### New real-chain Ethereum commands
-
-- `analyze eth chain`
-  - Fetches the latest 100 Ethereum canonical blocks from `ETH_RPC_URL`
-  - Builds detector-compatible metrics from the recent block window
-  - Runs the rule-based detector
-  - Saves raw blocks, metrics, detector output, and an LLM report under `outputs/`
-
-- `analyze eth chain <n_blocks>`
-  - Same as above, but uses a custom block window size
-  - Example:
-    - `analyze eth chain 300`
-
-- `analyze eth chain dryrun`
-  - Fetches recent Ethereum blocks from `ETH_RPC_URL`
-  - Builds the same real-chain metrics and runs the same detector
-  - Saves raw blocks, metrics, detector output, and a deterministic local Markdown report
-  - Does not call the LLM and does not require `OPENAI_API_KEY`
-
-- `analyze eth chain --no-llm <n_blocks>`
-  - Same dry-run behavior with an explicit flag
-  - Example:
-    - `analyze eth chain --no-llm 100`
-
+- `analyze csv detector data/mock_metrics.csv`
+- `analyze eth chain dryrun 100`
+- `analyze eth chain --no-llm 100`
+- `collect eth metrics 500 data/eth_metrics_latest.csv`
 - `analyze eth detector`
-  - Fetches recent Ethereum blocks
-  - Builds the current metric window
-  - Loads a baseline CSV if available
-  - Trains an `IsolationForest` model and scores the current Ethereum window
-  - Warns clearly if it falls back to `data/mock_metrics.csv`
-  - Saves artifacts under `outputs/`
-
-- `collect eth metrics <n_blocks> <output_csv_path>`
-  - Fetches recent Ethereum blocks
-  - Builds one or more rolling-window metric samples
-  - Saves detector-compatible CSV rows plus metadata columns
-  - Example:
-    - `collect eth metrics 500 data/eth_metrics_latest.csv`
-
 - `analyze real chain`
-  - Alias for `analyze eth chain`
+- `analyze eth chain 100`
 
-## Real-chain telemetry semantics
+## Recommended Capstone Demo Workflow
 
-The real-chain pipeline keeps the detector feature schema stable:
+Use one normal interactive PowerShell terminal so the environment variables stay in the same session:
+
+```powershell
+cd E:\capstone\AIagent
+
+$env:OPENAI_API_KEY="<YOUR_OPENAI_API_KEY>"
+$env:ETH_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/<YOUR_ALCHEMY_KEY>"
+
+agent\Scripts\python.exe main.py research
+```
+
+Inside the CLI:
+
+```text
+analyze eth chain dryrun 100
+collect eth metrics 500 data/eth_metrics_latest.csv
+analyze eth detector
+```
+
+Optional:
+
+```text
+analyze eth chain 100
+```
+
+## Expected Artifacts
+
+Successful Ethereum runs can generate:
+
+- `outputs/latest_eth_run.json`
+- `outputs/eth_blocks_*.json`
+- `outputs/eth_metrics_*.json`
+- `outputs/eth_detection_*.json`
+- `outputs/eth_report_*.md`
+- `data/eth_metrics_latest.csv`
+
+## Metric Interpretation Caveats
+
+The detector schema remains stable across mock and Ethereum workflows:
 
 - `block_time_sec_avg`
 - `block_time_sec_std`
@@ -116,175 +143,31 @@ The real-chain pipeline keeps the detector feature schema stable:
 - `hashrate_concentration_top3`
 - `miner_entropy`
 
-For Ethereum canonical JSON-RPC telemetry, these fields do not all mean the same thing as they would on a PoW chain:
+For Ethereum post-Merge, these schema names stay unchanged for compatibility, but the user-facing interpretation is different:
 
-- Directly observed:
-  - `block_time_sec_avg`
-  - `block_time_sec_std`
+- Ethereum post-Merge does not expose PoW hashrate via canonical JSON-RPC.
+- `hashrate_concentration_top1` and `hashrate_concentration_top3` are proposer / fee-recipient concentration proxies for Ethereum, not true PoW hashrate measures.
+- `miner_entropy` is entropy over proposer / fee-recipient addresses for Ethereum.
+- `fork_rate`, `orphan_rate`, and `reorg_depth_max` are placeholders under canonical JSON-RPC.
+- Stronger conclusions require beacon-chain validator data, p2p propagation data, mempool telemetry, MEV relay or builder data, archive-node history, or node logs.
 
-- Proxy metrics:
-  - `hashrate_concentration_top1`
-  - `hashrate_concentration_top3`
-  - `miner_entropy`
-  - These are computed from fee recipient / proposer address frequency, not true PoW hashrate concentration.
+## Testing
 
-- Placeholder metrics:
-  - `fork_rate`
-  - `orphan_rate`
-  - `reorg_depth_max`
-  - Canonical block queries do not expose these reliably, so the code stores explicit metadata that they are not observable from a simple canonical RPC window.
+Syntax pass:
 
-The LLM prompts are instructed to distinguish observed, proxy, and unavailable metrics and to recommend the next telemetry needed before making stronger security claims.
-
-## Artifacts
-
-Real-chain analysis runs create `outputs/` artifacts such as:
-
-- `outputs/eth_blocks_YYYYMMDD_HHMMSS.json`
-- `outputs/eth_metrics_YYYYMMDD_HHMMSS.json`
-- `outputs/eth_detection_YYYYMMDD_HHMMSS.json`
-- `outputs/eth_report_YYYYMMDD_HHMMSS.md`
-- `outputs/latest_eth_run.json`
-
-`outputs/latest_eth_run.json` is an index for the most recent Ethereum analysis run and includes:
-
-- chain
-- requested block count
-- start and end block
-- timestamp
-- detector label
-- anomaly score
-- artifact paths
-
-## Detector development direction
-
-The project now includes a minimal detector research scaffold:
-
-- `aiagent.detectors.schemas`
-  - Shared typed structures for consensus metrics, labeled samples, and detection results
-
-- `aiagent.detectors.simple_anomaly`
-  - A rule-based baseline detector for quick demonstrations
-
-- `aiagent.detectors.training`
-  - Mock training sample generation
-  - Statistical baseline fitting
-  - Baseline-based anomaly scoring
-  - Training recommendations for future ML models
-
-- `aiagent.detectors.csv_loader`
-  - Loads consensus-metric windows from CSV files into typed detector samples
-
-- `aiagent.detectors.isolation_forest_detector`
-  - Trains and scores an `IsolationForest` model for unsupervised anomaly detection
-
-- `aiagent.detectors.evaluation`
-  - Computes basic evaluation summaries such as anomalous prediction rate and per-label detection rate
-
-Recommended next step:
-
-- Collect longer real-chain baselines
-- Add chain-specific detector training and validation
-- Add richer telemetry such as beacon-chain, p2p, mempool, and reorg tracking
-- Train unsupervised and temporal models on multi-window features
-
-## CSV data format
-
-The sample CSV file is stored at:
-
-```text
-data/mock_metrics.csv
+```powershell
+agent\Scripts\python.exe -m compileall aiagent
 ```
 
-Required columns:
+Test suite:
 
-```text
-block_time_sec_avg
-block_time_sec_std
-fork_rate
-orphan_rate
-reorg_depth_max
-hashrate_concentration_top1
-hashrate_concentration_top3
-miner_entropy
+```powershell
+agent\Scripts\python.exe -m pytest
 ```
 
-Optional column:
+## Known Limitations And Next Steps
 
-```text
-label
-```
-
-If `label` is present, the current implementation will prefer samples labeled `normal`
-when fitting the Isolation Forest training set.
-
-Real-chain collection also adds optional metadata columns such as:
-
-- `chain`
-- `start_block`
-- `end_block`
-- `start_timestamp`
-- `end_timestamp`
-- `source`
-- `metric_notes`
-
-These extra columns are ignored by the current CSV loader, so detector compatibility is preserved.
-
-## Demo workflow
-
-1. Set environment variables:
-
-```bash
-set ETH_RPC_URL=https://your-ethereum-rpc-endpoint
-set OPENAI_API_KEY=your-openai-api-key
-```
-
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Start research mode:
-
-```bash
-python main.py research
-```
-
-4. Run a no-LLM real-chain dry run:
-
-```text
-analyze eth chain dryrun 100
-```
-
-5. Collect a reusable Ethereum baseline CSV:
-
-```text
-collect eth metrics 500 data/eth_metrics_latest.csv
-```
-
-6. Run rule-based real-chain analysis with the LLM enabled:
-
-```text
-analyze eth chain 100
-```
-
-7. Run Isolation Forest scoring on real-chain telemetry:
-
-```text
-analyze eth detector
-```
-
-## Metric interpretation caveats
-
-- Ethereum proposer concentration is only a proxy for hashrate concentration.
-- `fork_rate`, `orphan_rate`, and `reorg_depth_max` are placeholders when the data source is canonical Ethereum JSON-RPC alone.
-- Stronger security conclusions require richer telemetry such as beacon-chain data, p2p propagation measurements, mempool data, relay / builder telemetry, explicit reorg tracking, or node logs.
-
-## Run tests
-
-From the project root:
-
-```bash
-python -m pytest
-```
+- The real-chain workflow currently uses canonical RPC-only telemetry.
+- `fork_rate`, `orphan_rate`, and `reorg_depth_max` are placeholders under this data model.
+- The mock CSV fallback for the ML detector is useful for demo purposes but is not a valid Ethereum baseline.
+- Future work should collect a longer real Ethereum baseline, integrate beacon-chain data, add p2p and mempool telemetry, and use better temporal models.
