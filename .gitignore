@@ -18,6 +18,12 @@ outputs/
 data/eth_metrics_latest.csv
 *.log
 
+# Node / frontend build output
+node_modules/
+dashboard/node_modules/
+dashboard/dist/
+dashboard/.vite/
+
 # pip temporary directories
 pip-build-tracker-*
 pip-ephem-wheel-cache-*
@@ -26,3 +32,5 @@ pip-unpack-*
 
 # Editor settings
 .vscode/
+
+final_report/
